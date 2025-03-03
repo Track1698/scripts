@@ -14,19 +14,20 @@ Write-Host "Setting up executor..."
 # Define paths
 $targetFolder  = "C:\DispatchTracker"
 $executorPath  = Join-Path $targetFolder "executor.ps1"
-$sourcePath    = "\\ADMIN\sr\Scripts\executor.ps1"
+$githubUrl     = "https://raw.githubusercontent.com/Track1698/scripts/main/executor.ps1"
 
 # Ensure target directory exists
 if (-not (Test-Path $targetFolder)) {
     New-Item -ItemType Directory -Path $targetFolder | Out-Null
 }
 
-# Copy executor.ps1 from network share to local directory
-if (Test-Path $sourcePath) {
-    Copy-Item -Path $sourcePath -Destination $executorPath -Force
-    Write-Host "Executor copied to: $executorPath"
-} else {
-    Write-Host "Source executor.ps1 not found at $sourcePath"
+# Download executor.ps1 from GitHub
+try {
+    Invoke-WebRequest -Uri $githubUrl -OutFile $executorPath -UseBasicParsing
+    Write-Host "Executor downloaded to: $executorPath"
+}
+catch {
+    Write-Host "Failed to download executor.ps1 from GitHub. Error: $_"
     exit
 }
 
