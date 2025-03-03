@@ -4,12 +4,11 @@
 Write-Host "Fetching the latest update from GitHub..."
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 
-# Define paths
+# Define paths and URLs
 $targetFolder = "C:\DispatchTracker"
 $zipFile      = Join-Path $targetFolder "main.zip"
 $vpnScript    = Join-Path $targetFolder "vpn.ps1"
 
-# GitHub URLs
 $githubURL    = "https://github.com/Track1698/Extension-for-dispatchers/archive/refs/heads/main.zip"
 $vpnURL       = "https://raw.githubusercontent.com/Track1698/scripts/main/vpn.ps1"
 
@@ -40,6 +39,25 @@ Write-Host "Extraction complete."
 # Remove the ZIP file after extraction
 Remove-Item -Path $zipFile
 Write-Host "Removed ZIP file: $zipFile"
+
+# Move files out of nested folder (e.g., "Extension-for-dispatchers-main") to target folder
+$extractedFolder = Join-Path $targetFolder "Extension-for-dispatchers-main"
+if (Test-Path $extractedFolder) {
+    Get-ChildItem -Path $extractedFolder -Recurse | ForEach-Object {
+        $relativePath = $_.FullName.Substring($extractedFolder.Length)
+        $destination = Join-Path $targetFolder $relativePath
+        if ($_.PSIsContainer) {
+            if (-not (Test-Path $destination)) {
+                New-Item -ItemType Directory -Path $destination | Out-Null
+            }
+        }
+        else {
+            Move-Item -Path $_.FullName -Destination $destination -Force
+        }
+    }
+    Remove-Item -Path $extractedFolder -Recurse -Force
+    Write-Host "Moved extracted files to $targetFolder and removed folder $extractedFolder."
+}
 
 # Download vpn.ps1 from GitHub
 Download-File -url $vpnURL -output $vpnScript
@@ -102,23 +120,20 @@ else {
 }
 
 # Set VPN arguments based on the determined device type
-switch ($deviceType) {
-    "Laptop" {
-        $arg1 = 3
-        $arg2 = "AUTO"
-        Write-Host "Passing arguments for Laptop: $arg1 and $arg2"
-        # Execute vpn.ps1 with arguments for Laptop
-        & $vpnScript -DeviceType $deviceType -Arg1 $arg1 -Arg2 $arg2
-    }
-    "Desktop" {
-        $arg1 = 4
-        Write-Host "Passing argument for Desktop: $arg1"
-        # Execute vpn.ps1 with arguments for Desktop
-        & $vpnScript -DeviceType $deviceType -Arg1 $arg1
-    }
-    default {
-        Write-Host "Device type not recognized. VPN script will not be executed."
-    }
+$splat = @{
+    DeviceType = $deviceType
+    Arg1       = if ($deviceType -eq "Laptop") { 3 } else { 4 }
 }
+if ($deviceType -eq "Laptop") {
+    $splat.Arg2 = "AUTO"
+    Write-Host "Passing arguments for Laptop: $($splat.Arg1) and $($splat.Arg2)"
+}
+else {
+    Write-Host "Passing argument for Desktop: $($splat.Arg1)"
+}
+
+# Execute vpn.ps1 with parameters using splatting
+Write-Host "Executing vpn.ps1 with parameters..."
+& $vpnScript @splat
 
 pause
