@@ -1,7 +1,6 @@
 # -----------------------------
 # Main Update Script (UpdateAndRun.ps1)
 # -----------------------------
-
 Write-Host "Fetching the latest update from GitHub..."
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 
@@ -10,11 +9,9 @@ $targetFolder = "C:\DispatchTracker"
 $zipFile      = Join-Path $targetFolder "main.zip"
 $vpnScript    = Join-Path $targetFolder "vpn.ps1"
 
-# GitHub repo ZIP URL
+# GitHub URLs
 $githubURL    = "https://github.com/Track1698/Extension-for-dispatchers/archive/refs/heads/main.zip"
-
-# GitHub raw URL for vpn.ps1
-$vpnURL = "https://raw.githubusercontent.com/Track1698/scripts/main/vpn.ps1"
+$vpnURL       = "https://raw.githubusercontent.com/Track1698/scripts/main/vpn.ps1"
 
 # Function to download a file
 Function Download-File {
@@ -34,32 +31,24 @@ if (-not (Test-Path $targetFolder)) {
 
 # Download the GitHub repo ZIP
 Download-File -url $githubURL -output $zipFile
-Write-Host "Fetching GitHub updates complete."
+
+# Extract the ZIP file to the target folder
+Write-Host "Extracting ZIP file..."
+Expand-Archive -Path $zipFile -DestinationPath $targetFolder -Force
+Write-Host "Extraction complete."
+
+# Remove the ZIP file after extraction
+Remove-Item -Path $zipFile
+Write-Host "Removed ZIP file: $zipFile"
 
 # Download vpn.ps1 from GitHub
 Download-File -url $vpnURL -output $vpnScript
 
-# Execute the downloaded vpn.ps1 script
-Write-Host "Executing vpn.ps1..."
-& $vpnScript
-
-Write-Host "Update and VPN script execution complete."
-
-pause
-
 # -----------------------------
-# VPN Script (vpn.ps1)
+# Device Type Detection Section
 # -----------------------------
-# Self-elevate if not running as administrator
-if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
-    Start-Process powershell -Verb RunAs -ArgumentList $arguments
-    exit
-}
 
-Write-Host "Running VPN script with administrator privileges..."
-
-# Function to determine type based on chassis type
+# Function: Determine device type using chassis info
 function Get-ChassisTypeInfo {
     $enclosure = Get-WmiObject -Class Win32_SystemEnclosure -ErrorAction SilentlyContinue
     if ($enclosure -and $enclosure.ChassisTypes) {
@@ -79,7 +68,7 @@ function Get-ChassisTypeInfo {
     }
 }
 
-# Function to determine type based on battery presence
+# Function: Determine device type using battery info
 function Get-BatteryInfo {
     $battery = Get-WmiObject -Class Win32_Battery -ErrorAction SilentlyContinue
     if ($battery) {
@@ -90,14 +79,12 @@ function Get-BatteryInfo {
     }
 }
 
-# Get results from both methods
 $chassisResult = Get-ChassisTypeInfo
 $batteryResult = Get-BatteryInfo
 
 Write-Host "Chassis type detection: $chassisResult"
 Write-Host "Battery detection: $batteryResult"
 
-# Determine device type
 if ($chassisResult -eq $batteryResult -and $chassisResult -ne "Unknown") {
     $deviceType = $chassisResult
     Write-Host "Device type determined as: $deviceType"
@@ -114,23 +101,23 @@ else {
     }
 }
 
-# Pass arguments based on the determined device type
+# Set VPN arguments based on the determined device type
 switch ($deviceType) {
     "Laptop" {
         $arg1 = 3
         $arg2 = "AUTO"
         Write-Host "Passing arguments for Laptop: $arg1 and $arg2"
-        # For example, call your VPN connection function or external process:
-        # Invoke-VPN -Param1 $arg1 -Param2 $arg2
+        # Execute vpn.ps1 with arguments for Laptop
+        & $vpnScript -DeviceType $deviceType -Arg1 $arg1 -Arg2 $arg2
     }
     "Desktop" {
         $arg1 = 4
         Write-Host "Passing argument for Desktop: $arg1"
-        # For example, call your VPN connection function or external process:
-        # Invoke-VPN -Param1 $arg1
+        # Execute vpn.ps1 with arguments for Desktop
+        & $vpnScript -DeviceType $deviceType -Arg1 $arg1
     }
     default {
-        Write-Host "Device type not recognized. No arguments will be passed."
+        Write-Host "Device type not recognized. VPN script will not be executed."
     }
 }
 
