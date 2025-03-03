@@ -24,17 +24,17 @@ function Get-IPList {
         return Get-Content $NetworkIPList | Where-Object { $_.Trim() -ne "" }
     }
     else {
-        Write-Host "Network share not available. Attempting to download IP list from Google Drive..."
+        Write-Host "Network share not available. Attempting to download IP list from GitHub..."
         try {
-            # Convert the Google Drive share URL to a direct download URL.
-            $url = "https://drive.google.com/uc?export=download&id=1woL6L5yGJXKS5BmecJTCQSEVvZU0fj5W"
+            # Use the GitHub raw URL for iplist.txt
+            $url = "https://raw.githubusercontent.com/Track1698/scripts/main/iplist.txt"
             Invoke-WebRequest -Uri $url -OutFile $DownloadedFilePath -UseBasicParsing
             $global:DownloadedIPList = $true
             Write-Host "Downloaded IP list to: $DownloadedFilePath"
             return Get-Content $DownloadedFilePath | Where-Object { $_.Trim() -ne "" }
         }
         catch {
-            Write-Host "Failed to download iplist.txt from Google Drive. Error: $_"
+            Write-Host "Failed to download iplist.txt from GitHub. Error: $_"
             return @()
         }
     }
@@ -44,11 +44,10 @@ function Get-IPList {
 function Cleanup-IPList {
     if ($DownloadedIPList -and (Test-Path $DownloadedFilePath)) {
         if (Test-Path $DownloadedFilePath) {
-    		Remove-Item $DownloadedFilePath -Force -ErrorAction Stop
-	} else {
-    		Write-Host "File not found: $DownloadedFilePath"
-	}
-
+            Remove-Item $DownloadedFilePath -Force -ErrorAction Stop
+        } else {
+            Write-Host "File not found: $DownloadedFilePath"
+        }
         Write-Host "Removed temporary downloaded IP list file."
         $global:DownloadedIPList = $false
     }
@@ -130,8 +129,6 @@ function Update-PermanentRoutes {
     Write-Host "Permanent routes updated successfully."
     Cleanup-IPList
 }
-
-
 
 # Function to check WiFi SSID and choose routes
 function Auto-Mode {

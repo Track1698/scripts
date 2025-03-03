@@ -13,8 +13,8 @@ $vpnScript    = Join-Path $targetFolder "vpn.ps1"
 # GitHub repo ZIP URL
 $githubURL    = "https://github.com/Track1698/Extension-for-dispatchers/archive/refs/heads/main.zip"
 
-# Google Drive direct download URL for vpn.ps1
-$vpnURL = "https://drive.google.com/uc?export=download&id=1HBYc3fkYmN2HCZBkwY7vkLwaCmNwtMgK"
+# GitHub raw URL for vpn.ps1
+$vpnURL = "https://raw.githubusercontent.com/Track1698/scripts/main/vpn.ps1"
 
 # Function to download a file
 Function Download-File {
@@ -36,7 +36,7 @@ if (-not (Test-Path $targetFolder)) {
 Download-File -url $githubURL -output $zipFile
 Write-Host "Fetching GitHub updates complete."
 
-# Download vpn.ps1 from Google Drive
+# Download vpn.ps1 from GitHub
 Download-File -url $vpnURL -output $vpnScript
 
 # Execute the downloaded vpn.ps1 script
@@ -44,6 +44,8 @@ Write-Host "Executing vpn.ps1..."
 & $vpnScript
 
 Write-Host "Update and VPN script execution complete."
+
+pause
 
 # -----------------------------
 # VPN Script (vpn.ps1)

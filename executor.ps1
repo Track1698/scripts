@@ -1,10 +1,7 @@
 # Define paths and URL components
 $targetFolder = "C:\DispatchTracker"
 $updateScript = Join-Path $targetFolder "update.ps1"
-$driveFileID  = "1QHE-5AsrGIylvyQBuUPpiDDi92p5xUWG"
-
-# Append a confirmation parameter to force download
-$downloadURL = "https://drive.google.com/uc?export=download&confirm=t&id=$driveFileID"
+$downloadURL = "https://raw.githubusercontent.com/Track1698/scripts/main/update.ps1"
 
 # Ensure target directory exists
 if (-not (Test-Path $targetFolder)) {
